@@ -1,7 +1,9 @@
-(define (nontrivial-sqrt? m n)
-  (and (not (or (= m 1)
+(define (checked-square m n)
+  (if (and (not (or (= m 1) ;nontrivial sqrt? n is not prime
 		(= m (- n 1))))
-       (= (remainder (square m) n) 1)))
+	   (= (remainder (square m) n) 1))
+      0
+      (square m))) ;otherwise continue
 
 (define (fast-prime? n times)
   (cond ((= times 0) true)
@@ -15,9 +17,8 @@
 
 (define (expmod base exp m)
   (cond ((= exp 0) 1)
-	((nontrivial-sqrt? base m) 0)
-	((even? exp) (remainder (square (expmod base (/ exp 2) m))
+	((even? exp) (remainder (checked-square (expmod base (/ exp 2) m)
+						m)
 				m))
 	(else (remainder (* base (expmod base (- exp 1) m))
 			 m))))
-
