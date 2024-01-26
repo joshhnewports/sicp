@@ -1,6 +1,16 @@
-(define (integral f a b n) ;(sum term lower next upper)
+(define (simpson f a b n)
   (define h (/ (- b a) n))
-  (define (add-h y) (+ h y))
-  (define (coefficient i)
-    
-  (sum (coefficient f) (+ a h) add-h n)
+  (define (inc k) (+ k 1))
+  (define (term k)
+    (define y (f (+ a (* k h))))
+    (cond ((or (= k 0) (= k n)) y)
+	  ((odd? k) (* 4 y))
+	  (else (* 2 y))))
+  (* (sum term 0 inc n)
+     (/ h 3.0)))
+
+(define (sum term a next b)
+  (if (> a b)
+      0
+      (+ (term a)
+	 (sum term (next a) next b))))
