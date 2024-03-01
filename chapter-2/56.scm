@@ -12,7 +12,10 @@
           (make-product (deriv (multiplier exp) var)
                         (multiplicand exp))))
 	((exponentiation? exp)
-	 (make-exponentiation (base exp) (exponent exp) var))
+	 (make-product
+	  (make-product (exponent exp)
+			(make-exponentiation (base exp) (exponent exp)))
+	  (deriv (base exp) var)))
         (else
          (error "unknown expression type -- DERIV" exp))))
 
@@ -23,9 +26,8 @@
 
 (define (exponent exp) (caddr exp))
 
-(define (make-exponentiation u n var)
-  (cond ((=number? n 0) 0)
-	((=number? n 1) (deriv u var)
-	 (else
-	  (make-product n 
-  ;;else its the product of exponent, the exponentiation of base raised to exponent-1, and the deriv of base
+(define (make-exponentiation u n)
+  (cond ((and (number? n) (= 0 (- n 1))) 1)
+	((and (number? n) (= 1 (- n 1))) u)
+	((number? n) (list '** u (- n 1)))
+	(else (list '** u '(- n 1)))))
