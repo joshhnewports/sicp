@@ -1,2 +1,16 @@
-;;Procedure tree->list-1 generates a recursive process and tree->list-2 generates an iterative process, firstly.
-;;We can also describe tree->list-1 as folding right and tree->list-2 as folding left.
+;;The procedures produce the same results for the trees in Figure 2.16. As for every tree,
+;;the procedures construct a list in the order of left, center, and right, so they produce the same result.
+
+(define t '(7 (3 (1 () ())
+		 (5 () ()))
+	      (9 ()
+		 (11 () ()))))
+
+(define s '(3 (1 () ())
+	      (7 (5 () ())
+		 (9 ()
+		    (11 () ())))))
+
+(define u '(5 (3 (1 () ()) ())
+	      (9 (7 () ())
+		 (11 () ()))))
