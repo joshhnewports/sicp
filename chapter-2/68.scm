@@ -1,0 +1,7 @@
+(define (encode-symbol symbol tree)
+  (cond ((leaf? tree) '())
+	((element-of-set? symbol (symbols (left-branch tree)))
+	 (cons 0 (encode-symbol symbol (left-branch tree))))
+	((element-of-set? symbol (symbols (right-branch tree)))
+	 (cons 1 (encode-symbol symbol (right-branch tree))))
+	(else (error "symbol not in tree -- ENCODE-SYMBOL" symbol))))
