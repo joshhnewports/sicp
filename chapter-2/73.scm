@@ -40,3 +40,5 @@
   
   (put 'deriv '** exponentiation)
   'done)
+
+;;d. We would have to rearrage the arguments to each put.
