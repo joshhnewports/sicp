@@ -14,12 +14,12 @@
 
 ;;ordinary package
 (put 'sine '(scheme-number)
-     (lambda (x) (sin x)))
+     (lambda (x) (tag (sin x))))
 (put 'cosine '(scheme-number)
-     (lambda (x) (cos x)))
+     (lambda (x) (tag (cos x))))
 
 ;;rational package
 (put 'sine '(rational)
-     (lambda (x) (sin (/ (numer x) (denom x)))))
+     (lambda (x) (tag (sin (/ (numer x) (denom x))))))
 (put 'cosine '(rational)
-     (lambda (x) (cos (/ (numer x) (denom x)))))
+     (lambda (x) (tag (cos (/ (numer x) (denom x))))))
