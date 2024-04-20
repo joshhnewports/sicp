@@ -1,0 +1,10 @@
+(define rand
+  (let ((n random-init))
+    (lambda (m)
+      (cond ((eq? m 'generate)
+	     (set! n (rand-update n))
+	     n)
+	    ((eq? m 'reset)
+	     (lambda (new)
+	       (set! n new)))
+	    (else (error "Unknown request -- RAND" m))))))
