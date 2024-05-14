@@ -51,8 +51,10 @@
 (stream-car (cons 5 (delay (stream-map show (force (cdr (cons 5 (delay (stream-enumerate-interval 6 10)))))))))
 5
 
-;;Hand-made trace of (stream-ref x 5)
+;;Hand-made trace of (stream-ref x 5). Possibly wrong.
 ;;I have substituted stream-cdr for (force (cdr ...)) and decided to keep (show x) instead of evaluating it to x as well as
 ;;showing the number show prints as a comment beside its line.
 
-;;Now for (stream-ref x 7)
+;;Now for (stream-ref x 7). We do the very same, except that (show x) is memoized for numbers 1 through 5
+;;and their values are simply returned. We do not compute show, as in (proc), in the definition of memo-proc. Therefore we do not print
+;;each number by means of (display-line x). Since 6 and 7 are unaffected by this, they are displayed.
