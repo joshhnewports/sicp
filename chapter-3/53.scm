@@ -1,11 +1,4 @@
-(define integers (cons-stream 1 (add-streams ones integers))) ;integers => 1
+By hypothesis, s is a stream that starts with 1 and the next is the car plus itself. Thus we have
+1, 2, 4, 8, 16, 32, 64 ...
 
-(define (add-streams s1 s2) (stream-map + s1 s2))
-
-(stream-cdr (stream-cdr (stream-cdr integers)))
-(stream-cdr (stream-cdr (stream-cdr (cons-stream 1 (add-streams ones integers)))))
-
-(stream-cdr (stream-cdr (add-streams ones (cons-stream 1 (add-streams ones integers)))))
-
-(stream-cdr (stream-cdr (cons-stream 2 (add-streams ones (cons-stream 1 (cons-stream 2 integers))))))
-
+This is true! It is just like the stream double from earlier.
