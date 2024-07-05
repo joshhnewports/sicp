@@ -1,6 +1,17 @@
 (define x (stream-map show (stream-enumerate-interval 0 10)))
 
 ;;on definition of x
+(stream-map show (cons-stream 0 (stream-enumerate-interval 1 10)))
+(cons-stream 0 (stream-map show (cons-stream 1 (stream-enumerate-interval 2 10)))) ;=> 0
+
+;;evaluate (stream-ref x 5)
+(stream-ref (cons-stream 0 (stream-map show (cons-stream 1 (stream-enumerate-interval 2 10)))) 5)
+(stream-ref (stream-cdr (cons-stream 0 (stream-map show (cons-stream 1 (stream-enumerate-interval 2 10))))) 4)
+(stream-ref (
+
+;;---------------------- OLD VERSION
+
+;;on definition of x
 (stream-map show (cons 0 (delay (stream-enumerate-interval 1 10))))
 (cons (show 0) (delay (stream-map show (force (cdr (cons 0 (delay (stream-enumerate-interval 1 10)))))))) ;=> 0
 
