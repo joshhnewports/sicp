@@ -1,3 +1,12 @@
+;;on definition of seq
+(stream-map accum (stream-enumerate-interval 1 20))
+(stream-map accum (cons-stream 1 (stream-enumerate-interval 2 20)))
+(cons-stream 1 (stream-map accum (cons-stream 2 (stream-enumerate-interval 3 20)))) ;;sum = 1 afterwards
+
+
+
+;;OLD VERSION
+
 ;;(define seq ...) leaves sum at 1. 
 ;;(define y ...) generates 2 in seq, sets sum to 3, returns 3, and the filter of y rejects 3, generates 3 in seq,
 ;;sets sum to 6, returns 6, and the filter of y accepts 6.
