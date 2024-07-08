@@ -1,7 +1,29 @@
+(define sum 0)
+(define (accum x) (set! sum (+ x sum)) sum)
+(define seq
+  (stream-map accum
+	      (stream-enumerate-interval 1 20)))
+(define y (stream-filter even? seq))
+(define z
+  (stream-filter (lambda (x) (= (remainder x 5) 0))
+		 seq))
+
+
+
 ;;on definition of seq
 (stream-map accum (stream-enumerate-interval 1 20))
 (stream-map accum (cons-stream 1 (stream-enumerate-interval 2 20)))
 (cons-stream 1 (stream-map accum (cons-stream 2 (stream-enumerate-interval 3 20)))) ;;sum = 1 afterwards
+
+;;on definition of y
+(stream-filter even? (cons-stream 1 (stream-map accum (cons-stream 2 (stream-enumerate-interval 3 20)))))
+(stream-filter even? (cons-stream 3 (stream-map accum (cons-stream 3 (stream-enumerate-interval 4 20))))) ;;sum = 3
+(stream-filter even? (cons-stream 6 (stream-map accum (cons-stream 4 (stream-enumerate-interval 5 20))))) ;;sum = 6
+(cons-stream 6 (stream-filter even? (cons-stream 10 (stream-map accum (cons-stream 5 (stream-enumerate-interval 6 20)))))) ;;sum = 10
+
+;;on definition of z
+(stream-filter (lambda (x) (= (remainder x 5) 0)) (cons-stream 1 (stream-map accum (cons-stream 2 (stream-enumerate-interval 3 20)))))
+(stream-filter (lambda (x) (= (remainder x 5) 0)) (cons-stream 12 (stream-map accum (cons-stream 3 (stream-enumerate-interval 4 20)))))
 
 
 
