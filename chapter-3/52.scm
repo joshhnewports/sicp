@@ -21,9 +21,29 @@
 (stream-filter even? (cons-stream 6 (stream-map accum (cons-stream 4 (stream-enumerate-interval 5 20))))) ;;sum = 6
 (cons-stream 6 (stream-filter even? (cons-stream 10 (stream-map accum (cons-stream 5 (stream-enumerate-interval 6 20)))))) ;;sum = 10
 
-;;on definition of z
+;;on definition of z. accum of 1, 2, 3, 4 is memoized
 (stream-filter (lambda (x) (= (remainder x 5) 0)) (cons-stream 1 (stream-map accum (cons-stream 2 (stream-enumerate-interval 3 20)))))
-(stream-filter (lambda (x) (= (remainder x 5) 0)) (cons-stream 12 (stream-map accum (cons-stream 3 (stream-enumerate-interval 4 20)))))
+(stream-filter (lambda (x) (= (remainder x 5) 0)) (cons-stream 2 (stream-map accum (cons-stream 3 (stream-enumerate-interval 4 20)))))
+(stream-filter (lambda (x) (= (remainder x 5) 0)) (cons-stream 3 (stream-map accum (cons-stream 4 (stream-enumerate-interval 5 20)))))
+(stream-filter (lambda (x) (= (remainder x 5) 0)) (cons-stream 4 (stream-map accum (cons-stream 5 (stream-enumerate-interval 6 20)))))
+(stream-filter (lambda (x) (= (remainder x 5) 0)) (cons-stream 15 (stream-map accum (cons-stream 6 (stream-enumerate-interval 7 20)))))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
