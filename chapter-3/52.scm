@@ -12,9 +12,23 @@
 ;;on definition of seq
 (stream-map accum (stream-enumerate-interval 1 20))
 (stream-map accum (cons-stream 1 (stream-enumerate-interval 2 20)))
-(cons-stream (accum 1) (stream-map accum (stream-cdr (cons-stream 1 (stream-enumerate-interval 2 20)))))
-;;(cons-stream 1 (stream-map accum (
+(cons-stream 1 (stream-map accum (stream-cdr (cons-stream 1 (stream-enumerate-interval 2 20))))) ;sum = 1
 
+;;on definition of y
+(stream-filter even? (cons-stream 1 (stream-map accum (stream-cdr (cons-stream 1 (stream-enumerate-interval 2 20)))))) 
+(stream-filter even? (stream-cdr (cons-stream 1 (stream-map accum (stream-cdr (cons-stream 1 (stream-enumerate-interval 2 20)))))))
+(stream-filter even? (stream-map accum (stream-cdr (cons-stream 1 (stream-enumerate-interval 2 20)))))
+(stream-filter even? (stream-map accum (stream-enumerate-interval 2 20)))
+(stream-filter even? (stream-map accum (cons-stream 2 (stream-enumerate-interval 3 20))))
+(stream-filter even? (cons-stream 3 (stream-map accum (stream-cdr (cons-stream 2 (stream-enumerate-interval 3 20)))))) ;sum = 3
+(stream-filter even? (stream-cdr (cons-stream 3 (stream-map accum (stream-cdr (cons-stream 2 (stream-enumerate-interval 3 20)))))))
+(stream-filter even? (stream-map accum (stream-cdr (cons-stream 2 (stream-enumerate-interval 3 20)))))
+(stream-filter even? (stream-map accum (stream-enumerate-interval 3 20)))
+(stream-filter even? (stream-map accum (cons-stream 3 (stream-enumerate-interval 4 20))))
+(stream-filter even? (cons-stream 6 (stream-map accum (stream-cdr (cons-stream 3 (stream-enumerate-interval 4 20)))))) ;sum = 6
+(cons-stream
+ 6
+ (stream-filter even? (stream-cdr (cons-stream 6 (stream-map accum (stream-cdr (cons-stream 3 (stream-enumerate-interval 4 20))))))))
 
 
 
