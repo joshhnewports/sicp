@@ -35,19 +35,32 @@
 	       (cons-stream 1 (stream-map accum (stream-cdr (cons-stream 1 (stream-enumerate-interval 2 20))))))
 (stream-filter (lambda (x) (= (remainder x 5) 0))
 	       (stream-cdr (cons-stream 1 (stream-map accum (stream-cdr (cons-stream 1 (stream-enumerate-interval 2 20)))))))
-(stream-filter (lambda (x) (= (remainder x 5) 0)) (stream-map accum (stream-cdr (cons-stream 1 (stream-enumerate-interval 2 20)))))
-(stream-filter (lambda (x) (= (remainder x 5) 0)) (stream-map accum (cons-stream 2 (stream-enumerate-interval 3 20)))) ;memoized stream-cdr
+(stream-filter
+ (lambda (x) (= (remainder x 5) 0))
+ (cons-stream
+  6
+  (stream-filter even? (stream-cdr (cons-stream 6 (stream-map accum (stream-cdr (cons-stream 3 (stream-enumerate-interval 4 20)))))))))
+(stream-filter
+ (lambda (x) (= (remainder x 5) 0))
+ (stream-cdr
+  (cons-stream
+   6
+   (stream-filter even? (stream-cdr (cons-stream 6 (stream-map accum (stream-cdr (cons-stream 3 (stream-enumerate-interval 4 20))))))))))
+(stream-filter
+ (lambda (x) (= (remainder x 5) 0))
+ (stream-filter even? (stream-cdr (cons-stream 6 (stream-map accum (stream-cdr (cons-stream 3 (stream-enumerate-interval 4 20))))))))
 (stream-filter (lambda (x) (= (remainder x 5) 0))
-	       (cons-stream 2 (stream-map accum (stream-cdr (cons-stream 2 (stream-enumerate-interval 3 20))))))
+	       (stream-filter even? (stream-map accum (stream-cdr (cons-stream 3 (stream-enumerate-interval 4 20))))))
 (stream-filter (lambda (x) (= (remainder x 5) 0))
-	       (stream-cdr (cons-stream 2 (stream-map accum (stream-cdr (cons-stream 2 (stream-enumerate-interval 3 20)))))))
-(stream-filter (lambda (x) (= (remainder x 5) 0)) (stream-map accum (stream-cdr (cons-stream 2 (stream-enumerate-interval 3 20)))))
-(stream-filter (lambda (x) (= (remainder x 5) 0)) (stream-map accum (cons-stream 3 (stream-enumerate-interval 4 20)))) ;memoized stream-cdr
+	       (stream-filter even? (stream-map accum (stream-enumerate-interval 4 20))))
 (stream-filter (lambda (x) (= (remainder x 5) 0))
-	       (cons-stream 3 (stream-map accum (stream-cdr (cons-stream 3 (stream-enumerate-interval 4 20))))))
-(stream-filter (lambda (x) (= (remainder x 5) 0))
-	       (stream-cdr (cons-stream 3 (stream-map accum (stream-cdr (cons-stream 3 (stream-enumerate-interval 4 20)))))))
-(stream-
+	       (stream-filter even? (stream-map accum (cons-stream 4 (stream-enumerate-interval 5 20)))))
+
+
+
+
+
+
 
 
 
