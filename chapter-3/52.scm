@@ -2,7 +2,7 @@
 (define (accum x) (set! sum (+ x sum)) sum)
 (define seq
   (stream-map accum
-	      (stream-enumerate-interval 1 20)))
+	      (stream-enumerate-interval 2 20)))
 (define y (stream-filter even? seq))
 (define z
   (stream-filter (lambda (x) (= (remainder x 5) 0))
@@ -32,6 +32,27 @@
 ;;on definition of z
 (stream-filter (lambda (x) (= (remainder x 5) 0))
 	       (cons-stream 1 (stream-map accum (stream-cdr (cons-stream 1 (stream-enumerate-interval 2 20))))))
+(stream-filter (lambda (x) (= (remainder x 5) 0))
+	       (stream-cdr (cons-stream 1 (stream-map accum (stream-cdr (cons-stream 1 (stream-enumerate-interval 2 20)))))))
+(stream-filter (lambda (x) (= (remainder x 5) 0))
+	       (cons-stream 3 (stream-map accum (stream-cdr (cons-stream 2 (stream-enumerate-interval 3 20)))))) ;memoized
+(stream-filter (lambda (x) (= (remainder x 5) 0))
+	       (stream-cdr (cons-stream 3 (stream-map accum (stream-cdr (cons-stream 2 (stream-enumerate-interval 3 20)))))))
+(stream-filter (lambda (x) (= (remainder x 5) 0))
+	       (cons-stream 6 (stream-map accum (stream-cdr (cons-stream 3 (stream-enumerate-interval 4 20)))))) ;memoized
+(stream-filter (lambda (x) (= (remainder x 5) 0))
+	       (stream-cdr (cons-stream 6 (stream-map accum (stream-cdr (cons-stream 3 (stream-enumerate-interval 4 20)))))))
+(stream-filter (lambda (x) (= (remainder x 5) 0))
+	       (stream-map accum (stream-cdr (cons-stream 3 (stream-enumerate-interval 4 20)))))
+(stream-filter (lambda (x) (= (remainder x 5) 0))
+	       (stream-map accum (stream-enumerate-interval 4 20)))
+(stream-filter (lambda (x) (= (remainder x 5) 0))
+	       (stream-map accum (cons-stream 4 (stream-enumerate-interval 5 20))))
+(stream-filter (lambda (x) (= (remainder x 5) 0))
+	       (cons-stream 10 (stream-map accum (stream-cdr (cons-stream 4 (stream-enumerate-interval 5 20)))))) ;sum = 10
+(cons-stream 10 (stream-filter
+		 (lambda (x) (= (remainder x 5) 0))
+		 (stream-cdr (cons-stream 10 (stream-map accum (stream-cdr (cons-stream 4 (stream-enumerate-interval 5 20))))))))
 
 
 
