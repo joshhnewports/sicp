@@ -31,22 +31,23 @@
  6
  (stream-filter even? (stream-cdr (cons-stream 6 (stream-map accum (stream-cdr (cons-stream 3 (stream-enumerate-interval 4 20))))))))
 
-;;memoized under seq: (stream-map accum (stream-cdr (cons-stream 1 (stream-enumerate-interval 2 20))))
+;;memoized under seq:
+;;(stream-map accum (stream-cdr (cons-stream 1 (stream-enumerate-interval 2 20))))
 ;;(stream-map accum (stream-cdr (cons-stream 2 (stream-enumerate-interval 3 20))))
-;;(stream-map accum (stream-cdr (cons-stream 3 (stream-enumerate-interval 4 20))))
+;;(stream-map accum (stream-cdr (cons-stream 3 (stream-enumerate-interval 4 20)))). not yet called
 ;;and know that y is defined in terms of seq
 
-;;on definition of z
+;;on definition of z. follow the memoizations until we get to (... (stream-enumerate-interval 4 20)...)
 (stream-filter (lambda (x) (= (remainder x 5) 0))
 	       (cons-stream 1 (stream-map accum (stream-cdr (cons-stream 1 (stream-enumerate-interval 2 20))))))
 (stream-filter (lambda (x) (= (remainder x 5) 0))
 	       (stream-cdr (cons-stream 1 (stream-map accum (stream-cdr (cons-stream 1 (stream-enumerate-interval 2 20)))))))
 (stream-filter (lambda (x) (= (remainder x 5) 0))
-	       (cons-stream 3 (stream-map accum (stream-cdr (cons-stream 2 (stream-enumerate-interval 3 20)))))) ;memoized
+	       (cons-stream 3 (stream-map accum (stream-cdr (cons-stream 2 (stream-enumerate-interval 3 20)))))) ;memoization
 (stream-filter (lambda (x) (= (remainder x 5) 0))
 	       (stream-cdr (cons-stream 3 (stream-map accum (stream-cdr (cons-stream 2 (stream-enumerate-interval 3 20)))))))
 (stream-filter (lambda (x) (= (remainder x 5) 0))
-	       (cons-stream 6 (stream-map accum (stream-cdr (cons-stream 3 (stream-enumerate-interval 4 20)))))) ;memoized
+	       (cons-stream 6 (stream-map accum (stream-cdr (cons-stream 3 (stream-enumerate-interval 4 20)))))) ;memoization
 (stream-filter (lambda (x) (= (remainder x 5) 0))
 	       (stream-cdr (cons-stream 6 (stream-map accum (stream-cdr (cons-stream 3 (stream-enumerate-interval 4 20)))))))
 (stream-filter (lambda (x) (= (remainder x 5) 0))
@@ -61,26 +62,21 @@
 		 (lambda (x) (= (remainder x 5) 0))
 		 (stream-cdr (cons-stream 10 (stream-map accum (stream-cdr (cons-stream 4 (stream-enumerate-interval 5 20))))))))
 
+
+;;memoized:
+;;(stream-map accum (stream-cdr (cons-stream 3 (stream-enumerate-interval 4 20)))). finally called
+;;(stream-map accum (stream-cdr (cons-stream 4 (stream-enumerate-interval 4 20)))). not yet called
+
 ;;on stream-ref
 (stream-ref y 7)
+
 (stream-ref
  (cons-stream
   6
   (stream-filter even? (stream-cdr (cons-stream 6 (stream-map accum (stream-cdr (cons-stream 3 (stream-enumerate-interval 4 20))))))))
  7)
-(stream-ref
- (stream-cdr
-  (cons-stream
-   6
-   (stream-filter even? (stream-cdr (cons-stream 6 (stream-map accum (stream-cdr (cons-stream 3 (stream-enumerate-interval 4 20)))))))))
- 6)
-(stream-ref
- (stream-filter even? (stream-cdr (cons-stream 6 (stream-map accum (stream-cdr (cons-stream 3 (stream-enumerate-interval 4 20)))))))
- 6)
-(stream-ref (stream-filter even? (stream-map accum (stream-cdr (cons-stream 3 (stream-enumerate-interval 4 20))))) 6)
-(stream-ref (stream-filter even? (stream-map accum (stream-enumerate-interval 4 20))) 6)
-(stream-ref (stream-filter even? (stream-map accum (cons-stream 4 (stream-enumerate-interval 5 20)))) 6)
-(stream-ref (stream-filter even? (cons-stream (accum 4) (stream-map accum (stream-cdr (cons-stream 4 (stream-enumerate-interval 5 20)))))) 6)
+
+
 
 
 
