@@ -87,7 +87,67 @@
  6)
 
 (stream-ref (stream-filter even? (stream-map accum (stream-cdr (cons-stream 3 (stream-enumerate-interval 4 20))))) 6)
-(stream-ref (stream-filter even? (cons-stream 10 (stream-map accum (stream-cdr (cons-stream 4 (stream-enumerate-interval 5 20)))))) 6)
+(stream-ref
+ (stream-filter even? (cons-stream 10 (stream-map accum (stream-cdr (cons-stream 4 (stream-enumerate-interval 5 20)))))) 6) ;memoized
+
+(stream-ref
+ (cons-stream
+  10
+  (stream-filter even? (stream-cdr (cons-stream 10 (stream-map accum (stream-cdr (cons-stream 4 (stream-enumerate-interval 5 20))))))))
+ 6)
+
+(stream-ref
+ (stream-cdr
+  (cons-stream
+   10
+   (stream-filter even? (stream-cdr (cons-stream 10 (stream-map accum (stream-cdr (cons-stream 4 (stream-enumerate-interval 5 20)))))))))
+ 5)
+
+(stream-ref
+ (stream-filter even? (stream-cdr (cons-stream 10 (stream-map accum (stream-cdr (cons-stream 4 (stream-enumerate-interval 5 20)))))))
+ 5)
+
+(stream-ref (stream-filter even? (stream-map accum (stream-cdr (cons-stream 4 (stream-enumerate-interval 5 20))))) 5)
+(stream-ref (stream-filter even? (stream-map accum (stream-enumerate-interval 5 20))) 5)
+(stream-ref (stream-filter even? (stream-map accum (cons-stream 5 (stream-enumerate-interval 6 20)))) 5)
+
+(stream-ref
+ (stream-filter even? (cons-stream 15 (stream-map accum (stream-cdr (cons-stream 5 (stream-enumerate-interval 6 20)))))) 5) ;sum = 15
+
+(stream-ref
+ (stream-filter even? (stream-cdr (cons-stream 15 (stream-map accum (stream-cdr (cons-stream 5 (stream-enumerate-interval 6 20))))))) 5)
+
+(stream-ref (stream-filter even? (stream-map accum (stream-cdr (cons-stream 5 (stream-enumerate-interval 6 20))))) 5)
+(stream-ref (stream-filter even? (stream-map accum (stream-enumerate-interval 6 20))) 5)
+(stream-ref (stream-filter even? (stream-map accum (cons-stream 6 (stream-enumerate-interval 7 20)))) 5)
+
+(stream-ref
+ (stream-filter even? (cons-stream 21 (stream-map accum (stream-cdr (cons-stream 6 (stream-enumerate-interval 7 20)))))) 5) ;sum = 21
+
+(stream-ref
+ (stream-filter even? (stream-cdr (cons-stream 21 (stream-map accum (stream-cdr (cons-stream 6 (stream-enumerate-interval 7 20))))))) 5)
+
+(stream-ref (stream-filter even? (stream-map accum (stream-cdr (cons-stream 6 (stream-enumerate-interval 7 20))))) 5)
+(stream-ref (stream-filter even? (stream-map accum (stream-enumerate-interval 7 20))) 5)
+(stream-ref (stream-filter even? (stream-map accum (cons-stream 7 (stream-enumerate-interval 8 20)))) 5)
+
+(stream-ref
+ (stream-filter even? (cons-stream 28 (stream-map accum (stream-cdr (cons-stream 7 (stream-enumerate-interval 8 20)))))) 5) ;sum = 28
+
+(stream-ref
+ (cons-stream
+  28
+  (stream-filter even? (stream-cdr (cons-stream 28 (stream-map accum (stream-cdr (cons-stream 7 (stream-enumerate-interval 8 20))))))))
+ 5)
+
+(stream-ref
+ (stream-cdr
+  (cons-stream
+   28
+   (stream-filter even? (stream-cdr (cons-stream 28 (stream-map accum (stream-cdr (cons-stream 7 (stream-enumerate-interval 8 20)))))))))
+ 4)
+
+ 
 
 
 
