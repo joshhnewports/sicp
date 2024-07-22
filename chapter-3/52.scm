@@ -456,9 +456,109 @@
  (stream-filter (lambda (x) (= (remainder x 5) 0))
 		(cons-stream 55 (stream-map accum (stream-cdr (cons-stream 10 (stream-enumerate-interval 11 20))))))) ;memoized
  
+(stream-for-each
+ display-line
+ (cons-stream
+  55
+  (stream-filter (lambda (x) (= (remainder x 5) 0))
+		 (stream-cdr (cons-stream 55 (stream-map accum (stream-cdr (cons-stream 10 (stream-enumerate-interval 11 20)))))))))
 
+;;(display-line 55)
+(stream-for-each
+ display-line
+ (stream-cdr
+  (cons-stream
+   55
+   (stream-filter (lambda (x) (= (remainder x 5) 0))
+		  (stream-cdr (cons-stream 55 (stream-map accum (stream-cdr (cons-stream 10 (stream-enumerate-interval 11 20))))))))))
 
+(stream-for-each
+ display-line
+ (stream-filter (lambda (x) (= (remainder x 5) 0))
+		(stream-cdr (cons-stream 55 (stream-map accum (stream-cdr (cons-stream 10 (stream-enumerate-interval 11 20))))))))
 
+(stream-for-each
+ display-line
+ (stream-filter (lambda (x) (= (remainder x 5) 0))
+		(stream-map accum (stream-cdr (cons-stream 10 (stream-enumerate-interval 11 20))))))
+
+(stream-for-each
+ display-line
+ (stream-filter (lambda (x) (= (remainder x 5) 0))
+		(cons-stream 66 (stream-map accum (stream-cdr (cons-stream 11 (stream-enumerate-interval 12 20)))))))
+
+(stream-for-each
+ display-line
+ (stream-filter (lambda (x) (= (remainder x 5) 0))
+		(stream-cdr (cons-stream 66 (stream-map accum (stream-cdr (cons-stream 11 (stream-enumerate-interval 12 20))))))))
+
+(stream-for-each
+ display-line
+ (stream-filter (lambda (x) (= (remainder x 5) 0))
+		(stream-map accum (stream-cdr (cons-stream 11 (stream-enumerate-interval 12 20))))))
+
+(stream-for-each
+ display-line
+ (stream-filter (lambda (x) (= (remainder x 5) 0))
+		(cons-stream 78 (stream-map accum (stream-cdr (cons-stream 12 (stream-enumerate-interval 13 20)))))))
+
+(stream-for-each
+ display-line
+ (stream-filter (lambda (x) (= (remainder x 5) 0))
+		(stream-cdr (cons-stream 78 (stream-map accum (stream-cdr (cons-stream 12 (stream-enumerate-interval 13 20))))))))
+
+(stream-for-each
+ display-line
+ (stream-filter (lambda (x) (= (remainder x 5) 0))
+		(stream-map accum (stream-cdr (cons-stream 12 (stream-enumerate-interval 13 20))))))
+
+(stream-for-each
+ display-line
+ (stream-filter (lambda (x) (= (remainder x 5) 0))
+		(cons-stream 91 (stream-map accum (stream-cdr (cons-stream 13 (stream-enumerate-interval 14 20)))))))
+
+;;for time, we will skip some intermediary steps
+
+(stream-for-each
+ display-line
+ (stream-filter (lambda (x) (= (remainder x 5) 0))
+		(stream-map accum (stream-cdr (cons-stream 13 (stream-enumerate-interval 14 20))))))
+
+(stream-for-each
+ display-line
+ (stream-filter (lambda (x) (= (remainder x 5) 0))
+		(cons-stream 105 (stream-map accum (stream-cdr (cons-stream 14 (stream-enumerate-interval 15 20)))))))
+
+(stream-for-each
+ display-line
+ (cons-stream
+  105
+  (stream-filter (lambda (x) (= (remainder x 5) 0))
+		 (stream-map accum (stream-cdr (cons-stream 14 (stream-enumerate-interval 15 20)))))))
+
+;;(display-line 105)
+(stream-for-each
+ display-line
+ (stream-filter (lambda (x) (= (remainder x 5) 0))
+		(stream-map accum (stream-cdr (cons-stream 14 (stream-enumerate-interval 15 20))))))
+
+(stream-for-each
+ display-line
+ (stream-filter (lambda (x) (= (remainder x 5) 0))
+		(cons-stream 120 (stream-map accum (stream-cdr (cons-stream 15 (stream-enumerate-interval 16 20)))))))
+
+(stream-for-each
+ display-line
+ (cons-stream
+  120
+  (stream-filter (lambda (x) (= (remainder x 5) 0))
+		 (stream-map accum (stream-cdr (cons-stream 15 (stream-enumerate-interval 16 20)))))))
+
+;;(display-line 120)
+(stream-for-each
+ display-line
+ (stream-filter (lambda (x) (= (remainder x 5) 0))
+		(stream-map accum (stream-cdr (cons-stream 15 (stream-enumerate-interval 16 20))))))
 
 
 
