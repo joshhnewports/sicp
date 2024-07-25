@@ -1,4 +1,2 @@
-By hypothesis, s is a stream that starts with 1 and the next is the car plus itself. Thus we have
-1, 2, 4, 8, 16, 32, 64 ...
+The stream s has a car of 1 and a cdr of the component-wise sum of s and s. Each successive element in s is double the previous.
 
-This is true! It is just like the stream double from earlier.
