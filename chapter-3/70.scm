@@ -6,15 +6,12 @@
 	(else
 	 (let ((w1 (weight (stream-car s1)))
 	       (w2 (weight (stream-car s2))))
-	   (cond ((< w1 w2)
+	   (cond ((<= w1 w2)
 		  (cons-stream (stream-car s1)
 			       (merge-weighted (stream-cdr s1) s2 weight)))
 		 ((> w1 w2)
 		  (cons-stream (stream-car s2)
-			       (merge-weighted s1 (stream-cdr s2) weight)))
-		 (else
-		  (cons-stream (stream-car s1)
-			       (merge-weighted (stream-cdr s1) (stream-cdr s2) weight))))))))
+			       (merge-weighted s1 (stream-cdr s2) weight))))))))
 
 (define (weighted-pairs s t weight)
   (cons-stream (list (stream-car s) (stream-car t))
