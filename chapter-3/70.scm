@@ -23,4 +23,16 @@
 
 (define a (weighted-pairs integers integers (lambda (pair) (apply + pair))))
 
-(define s (cons-stream 1 (cons-stream 2 3)))
+(define filtered-integers (stream-filter (lambda (i) (and (not (divisible? i 2))
+							  (not (divisible? i 3))
+							  (not (divisible? i 5))))
+					 integers))
+
+(define b
+  (weighted-pairs filtered-integers
+		  filtered-integers
+		  (lambda (pair) (+ (* 2 (car pair))
+				    (* 3 (cadr pair))
+				    (* 5 (car pair) (cadr pair))))))
+							
+				 
