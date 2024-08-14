@@ -76,7 +76,7 @@
 (define (expand-or predicates)
   (if (no-predicates? predicates)
       false
-      ((make-lambda (p)
+      ((make-lambda p
 		    (make-if p
 			     p
 			     (expand-or (rest-predicates predicates))))
