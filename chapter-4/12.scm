@@ -12,12 +12,21 @@
 		(frame-values frame)))))
   (env-loop env))
 
-(define (lookup var frame)
-  (let ((vars (frame-variables frame))
-	(vals (frame-values frame)))
+(define (lookup-in-frame var frame)
+  (define (scan vars vals)
     (cond ((null? vars) false)
-	  ((eq?
-	     
+	  ((eq? var (car vars)) (car vals))
+	  (else (scan (cdr vars) (cdr vals)))))
+  (scan (frame-variables frame) (frame-values frame)))
+
+(define (set-in-frame! var val frame)
+  (lambda (null-exp)
+    (define (scan vars vals)
+      (cond ((null? vars) (null-exp))
+	    ((eq? var (car vars)) (set-car! vals val))
+	    (else (scan (cdr vars) (cdr vals)))))
+    (scan (frame-variables frame) (frame-values frame))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 
