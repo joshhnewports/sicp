@@ -1,0 +1,1 @@
+Remove the two instructions (restore continue) and (save continue) under afterfib-n-1. The stack is the same before and after these instructions and their contents are not used anywhere in between, so they are redundant.
