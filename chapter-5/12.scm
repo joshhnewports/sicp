@@ -7,9 +7,9 @@
         (stack (make-stack))
         (the-instruction-sequence '())
 	(instructions '((*assign*) (*test*) (*branch*) (*goto*) (*save*) (*restore*) (*perform*)))
-	(goto-registers '())
-	(save-restore-registers '())
-	(register-sources '()))
+	(goto-registers '(*head*))
+	(save-restore-registers '(*head*))
+	(register-sources '(*head*)))
     (let ((the-ops
            (list (list 'initialize-stack
                        (lambda () (stack 'initialize)))))
@@ -56,15 +56,16 @@
 (define (make-assign inst machine labels operations pc)
   (let ((target
          (get-register machine (assign-reg-name inst)))
-        (value-exp (assign-value-exp inst)))
-    (let ((assign-entries (assoc '*assign* (machine 'instructions)))
-	  (value-proc
+        (value-exp (assign-value-exp inst))
+	(assign-entries (assoc '*assign* (machine 'instructions))))
+    (if (not (memq inst assign-entries))
+	(set-cdr! assign-entries (cons inst (cdr assign-entries)))) ;add inst to instructions
+    (let ((value-proc
            (if (operation-exp? value-exp)
                (make-operation-exp
                 value-exp machine labels operations)
                (make-primitive-exp
                 (car value-exp) machine labels))))
-      (set-cdr! assign-entries (cons inst (cdr assign-entries))) ;add inst to instructions
       (lambda ()
         (set-contents! target (value-proc))
         (advance-pc pc)))))
@@ -76,7 +77,8 @@
 	      (condition-proc
 	       (make-operation-exp
                 condition machine labels operations)))
-	  (set-cdr! test-entries (cons inst (cdr test-entries))) ;here!
+	  (if (not (memq inst test-entries))
+	      (set-cdr! test-entries (cons inst (cdr test-entries)))) ;here!
 	  (lambda ()
 	    (set-contents! flag (condition-proc))
 	    (advance-pc pc)))
@@ -88,7 +90,8 @@
         (let ((insts
                (lookup-label labels (label-exp-label dest)))
 	      (branch-entries (assoc '*branch* (machine 'instructions))))
-	  (set-cdr! branch-entries (cons inst (cdr branch-entries)))
+	  (if (not (memq inst branch-entries))
+	      (set-cdr! branch-entries (cons inst (cdr branch-entries)))) ;here!
           (lambda ()
             (if (get-contents flag)
                 (set-contents! pc insts)
@@ -96,17 +99,56 @@
         (error "Bad BRANCH instruction -- ASSEMBLE" inst))))
 
 (define (make-goto inst machine labels pc)
-  (let ((dest (goto-dest inst)))
+  (let ((dest (goto-dest inst))
+	(goto-entries (assoc '*goto* (machine 'instructions))))
+    (if (not (memq inst goto-entries))
+	(set-cdr! goto-entries (const inst (cdr goto-entries)))) ;here!
     (cond ((label-exp? dest)
            (let ((insts
                   (lookup-label labels
                                 (label-exp-label dest))))
              (lambda () (set-contents! pc insts))))
           ((register-exp? dest)
-           (let ((reg
-                  (get-register machine
-                                (register-exp-reg dest))))
+           (let ((reg-name (register-exp-reg dest))
+		 (reg (get-register machine reg-name))
+		 (goto-registers (machine 'goto-registers)))
+	     (if (not (memq reg-name goto-registers))
+		 (set-cdr! goto-registers (cons reg-name (cdr goto-registers))))
              (lambda ()
                (set-contents! pc (get-contents reg)))))
           (else (error "Bad GOTO instruction -- ASSEMBLE"
                        inst)))))
+
+(define (make-save inst machine stack pc)
+  (let ((reg (get-register machine
+                           (stack-inst-reg-name inst)))
+	(save-entries (assoc '*save* (machine 'instructions))))
+    (if (not (memq inst save-entries))
+	(set-cdr! save-entries (cons inst (cdr save-entries)))) ;here!
+    (lambda ()
+      (push stack (get-contents reg))
+      (advance-pc pc))))
+
+(define (make-restore inst machine stack pc)
+  (let ((reg (get-register machine
+                           (stack-inst-reg-name inst)))
+	(restore-entries (assoc '*restore* (machine 'instructions))))
+    (if (not (memq inst restore-entries))
+	(set-cdr! restore-entries (cons inst (cdr restore-entries)))) ;here!
+    (lambda ()
+      (set-contents! reg (pop stack))    
+      (advance-pc pc))))
+
+(define (make-perform inst machine labels operations pc)
+  (let ((action (perform-action inst)))
+    (if (operation-exp? action)
+        (let ((action-proc
+               (make-operation-exp
+                action machine labels operations))
+	      (perform-entries (assoc '*perform* (machine 'instructions))))
+	  (if (not (memq inst perform-entries))
+	      (set-cdr! perform-entries (cons inst (cdr perform-entries))))
+          (lambda ()
+            (action-proc)
+            (advance-pc pc)))
+        (error "Bad PERFORM instruction -- ASSEMBLE" inst))))
