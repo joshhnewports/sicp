@@ -8,7 +8,7 @@
         (the-instruction-sequence '())
 	(instructions '((*assign*) (*test*) (*branch*) (*goto*) (*save*) (*restore*) (*perform*)))
 	(goto-registers '(*head*))
-	(save-restore-registers '(*head*))
+	(stack-registers '(*head*))
 	(register-sources '(*head*)))
     (let ((the-ops
            (list (list 'initialize-stack
@@ -48,7 +48,7 @@
               ((eq? message 'operations) the-ops)
 	      ((eq? message 'instructions) instructions)
 	      ((eq? message 'goto-registers) goto-registers)
-	      ((eq? message 'save-restore-registers) save-restore-registers)
+	      ((eq? message 'stack-registers) stack-registers)
 	      ((eq? message 'register-sources) register-sources)
               (else (error "Unknown request -- MACHINE" message))))
       dispatch)))
@@ -110,34 +110,40 @@
              (lambda () (set-contents! pc insts))))
           ((register-exp? dest)
            (let ((reg-name (register-exp-reg dest))
-		 (reg (get-register machine reg-name))
 		 (goto-registers (machine 'goto-registers)))
-	     (if (not (memq reg-name goto-registers))
-		 (set-cdr! goto-registers (cons reg-name (cdr goto-registers))))
-             (lambda ()
-               (set-contents! pc (get-contents reg)))))
-          (else (error "Bad GOTO instruction -- ASSEMBLE"
-                       inst)))))
+	     (let ((reg (get-register machine reg-name)))
+	       (if (not (memq reg-name goto-registers))
+		   (set-cdr! goto-registers (cons reg-name (cdr goto-registers))))
+               (lambda ()
+		 (set-contents! pc (get-contents reg)))))
+           (else (error "Bad GOTO instruction -- ASSEMBLE"
+			inst))))))
 
 (define (make-save inst machine stack pc)
-  (let ((reg (get-register machine
-                           (stack-inst-reg-name inst)))
-	(save-entries (assoc '*save* (machine 'instructions))))
-    (if (not (memq inst save-entries))
-	(set-cdr! save-entries (cons inst (cdr save-entries)))) ;here!
-    (lambda ()
-      (push stack (get-contents reg))
-      (advance-pc pc))))
+  (let ((reg-name (stack-inst-reg-name inst))
+	(save-entries (assoc '*save* (machine 'instructions)))
+	(stack-registers (machine 'stack-registers)))
+    (let ((reg (get-register machine reg-name)))
+      (if (not (memq inst save-entries))
+	  (set-cdr! save-entries (cons inst (cdr save-entries)))) ;here!
+      (if (not (memq reg-name stack-registers))
+	  (set-cdr! stack-registers (cons reg-name (cdr stack-registers))))
+      (lambda ()
+	(push stack (get-contents reg))
+	(advance-pc pc)))))
 
 (define (make-restore inst machine stack pc)
-  (let ((reg (get-register machine
-                           (stack-inst-reg-name inst)))
-	(restore-entries (assoc '*restore* (machine 'instructions))))
-    (if (not (memq inst restore-entries))
-	(set-cdr! restore-entries (cons inst (cdr restore-entries)))) ;here!
-    (lambda ()
-      (set-contents! reg (pop stack))    
-      (advance-pc pc))))
+  (let ((reg-name (stack-inst-reg-name inst))
+	(restore-entries (assoc '*restore* (machine 'instructions)))
+	(stack-registers (machine 'stack-registers)))
+    (let ((reg (get-register machine reg-name)))
+      (if (not (memq inst restore-entries))
+	  (set-cdr! restore-entries (cons inst (cdr restore-entries)))) ;here!
+      (if (not (memq reg-name stack-registers))
+	  (set-cdr! stack-registers (cons reg-name (cdr stack-registers))))
+      (lambda ()
+	(set-contents! reg (pop stack))    
+	(advance-pc pc)))))
 
 (define (make-perform inst machine labels operations pc)
   (let ((action (perform-action inst)))
