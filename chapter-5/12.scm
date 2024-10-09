@@ -1,15 +1,29 @@
 ;;the information for the data paths should not require that the machine be run with start but should be
 ;;generated only once the machine is defined. that is, after the instructions have been assembled.
 
+(define (make-machine register-names ops controller-text)
+  (let ((machine (make-new-machine)))
+    (for-each (lambda (register-name)
+                ((machine 'allocate-register) register-name))
+              register-names)
+    ((machine 'install-operations) ops)    
+    ((machine 'install-instruction-sequence)
+     (assemble controller-text machine))
+    machine))
+
+;; '((*assign*) (*test*) (*branch*) ...) is not the same as using lists as shown below
+;;not specified in sicp that using quote makes the local state be shared between all instances of make-new-machine
+;;using (list (list '*assign*) ...) prevents shared state, and objects function how we want as per chapter 3
 (define (make-new-machine)
   (let ((pc (make-register 'pc))
         (flag (make-register 'flag))
         (stack (make-stack))
         (the-instruction-sequence '())
-	(instructions '((*assign*) (*test*) (*branch*) (*goto*) (*save*) (*restore*) (*perform*)))
-	(goto-registers '(*head*))
-	(stack-registers '(*head*))
-	(register-sources '(*head*)))
+	(instructions (list (list '*assign*) (list '*test*) (list '*branch*)
+			    (list '*goto*) (list '*save*) (list '*restore*) (list '*perform*)))
+	(goto-registers (list '*head*))
+	(stack-registers (list '(*save*) '(*restore*)))
+	(register-sources (list '*head*)))
     (let ((the-ops
            (list (list 'initialize-stack
                        (lambda () (stack 'initialize)))))
@@ -54,10 +68,10 @@
       dispatch)))
 
 (define (make-assign inst machine labels operations pc)
-  (let ((target
-         (get-register machine (assign-reg-name inst)))
+  (let ((reg-name (assign-reg-name inst))
         (value-exp (assign-value-exp inst))
-	(assign-entries (assoc '*assign* (machine 'instructions))))
+	(assign-entries (assoc '*assign* (machine 'instructions)))
+	(register-sources (machine 'register-sources)))
     (if (not (memq inst assign-entries))
 	(set-cdr! assign-entries (cons inst (cdr assign-entries)))) ;add inst to instructions
     (let ((value-proc
@@ -65,8 +79,15 @@
                (make-operation-exp
                 value-exp machine labels operations)
                (make-primitive-exp
-                (car value-exp) machine labels))))
-      (lambda ()
+                (car value-exp) machine labels)))
+	  (target (get-register machine reg-name))
+	  (sources (lookup reg-name register-sources)))
+      (if sources                                                  ;sources for this register exist?
+	  (set-cdr! sources (cons (car value-exp) (cdr sources)))  ;add this source to the register's sources
+	  (set-cdr! register-sources                               ;add this register and its source to machine
+		    (cons (list reg-name (car value-exp))          ;(car value-exp) to remove extra ()
+			  (cdr register-sources))))                ;since value-exp is doubly parenthesized for
+      (lambda ()                                                   ;operation-exp?
         (set-contents! target (value-proc))
         (advance-pc pc)))))
 
@@ -104,30 +125,27 @@
     (if (not (memq inst goto-entries))
 	(set-cdr! goto-entries (const inst (cdr goto-entries)))) ;here!
     (cond ((label-exp? dest)
-           (let ((insts
-                  (lookup-label labels
-                                (label-exp-label dest))))
+           (let ((insts (lookup-label labels (label-exp-label dest))))
              (lambda () (set-contents! pc insts))))
           ((register-exp? dest)
            (let ((reg-name (register-exp-reg dest))
 		 (goto-registers (machine 'goto-registers)))
 	     (let ((reg (get-register machine reg-name)))
-	       (if (not (memq reg-name goto-registers))
+	       (if (not (lookup reg-name goto-registers))
 		   (set-cdr! goto-registers (cons reg-name (cdr goto-registers))))
                (lambda ()
-		 (set-contents! pc (get-contents reg)))))
-           (else (error "Bad GOTO instruction -- ASSEMBLE"
-			inst))))))
+		 (set-contents! pc (get-contents reg))))))
+           (else (error "Bad GOTO instruction -- ASSEMBLE" inst)))))
 
 (define (make-save inst machine stack pc)
   (let ((reg-name (stack-inst-reg-name inst))
 	(save-entries (assoc '*save* (machine 'instructions)))
-	(stack-registers (machine 'stack-registers)))
+	(save-registers (assoc '*save* (machine 'stack-registers))))
     (let ((reg (get-register machine reg-name)))
       (if (not (memq inst save-entries))
 	  (set-cdr! save-entries (cons inst (cdr save-entries)))) ;here!
-      (if (not (memq reg-name stack-registers))
-	  (set-cdr! stack-registers (cons reg-name (cdr stack-registers))))
+      (if (not (memq reg-name save-registers))
+	  (set-cdr! save-registers (cons reg-name (cdr save-registers))))
       (lambda ()
 	(push stack (get-contents reg))
 	(advance-pc pc)))))
@@ -135,14 +153,14 @@
 (define (make-restore inst machine stack pc)
   (let ((reg-name (stack-inst-reg-name inst))
 	(restore-entries (assoc '*restore* (machine 'instructions)))
-	(stack-registers (machine 'stack-registers)))
+	(restore-registers (assoc '*restore* (machine 'stack-registers))))
     (let ((reg (get-register machine reg-name)))
       (if (not (memq inst restore-entries))
 	  (set-cdr! restore-entries (cons inst (cdr restore-entries)))) ;here!
-      (if (not (memq reg-name stack-registers))
-	  (set-cdr! stack-registers (cons reg-name (cdr stack-registers))))
+      (if (not (memq reg-name restore-registers))
+	  (set-cdr! restore-registers (cons reg-name (cdr restore-registers))))
       (lambda ()
-	(set-contents! reg (pop stack))    
+	(set-contents! reg (pop stack))
 	(advance-pc pc)))))
 
 (define (make-perform inst machine labels operations pc)
@@ -158,3 +176,35 @@
             (action-proc)
             (advance-pc pc)))
         (error "Bad PERFORM instruction -- ASSEMBLE" inst))))
+
+(define fib-machine
+  (make-machine
+   '(continue n val)
+   (list (list '* *) (list '- -) (list '= =) (list '< <))
+   '((assign continue (label fib-done))
+     fib-loop
+     (test (op <) (reg n) (const 2))
+     (branch (label immediate-answer))
+     (save continue)
+     (assign continue (label afterfib-n-1))
+     (save n)
+     (assign n (op -) (reg n) (const 1))
+     (goto (label fib-loop))
+     afterfib-n-1
+     (restore n)
+     (restore continue)
+     (assign n (op -) (reg n) (const 2))
+     (save continue)
+     (assign continue (label afterfib-n-2))
+     (save val)
+     (goto (label fib-loop))
+     afterfib-n-2 
+     (assign n (reg val))
+     (restore val)
+     (restore continue)
+     (assign val (op +) (reg val) (reg n)) 
+     (goto (reg continue))        
+     immediate-answer
+     (assign val (reg n)) 
+     (goto (reg continue))
+     fib-done)))
