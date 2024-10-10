@@ -1,16 +1,6 @@
 ;;the information for the data paths should not require that the machine be run with start but should be
 ;;generated only once the machine is defined. that is, after the instructions have been assembled.
 
-(define (make-machine register-names ops controller-text)
-  (let ((machine (make-new-machine)))
-    (for-each (lambda (register-name)
-                ((machine 'allocate-register) register-name))
-              register-names)
-    ((machine 'install-operations) ops)    
-    ((machine 'install-instruction-sequence)
-     (assemble controller-text machine))
-    machine))
-
 ;; '((*assign*) (*test*) (*branch*) ...) is not the same as using lists as shown below
 ;;not specified in sicp that using quote makes the local state be shared between all instances of make-new-machine
 ;;using (list (list '*assign*) ...) prevents shared state, and objects function how we want as per chapter 3
@@ -83,9 +73,9 @@
 	  (target (get-register machine reg-name))
 	  (sources (lookup reg-name register-sources)))
       (if sources                                                  ;sources for this register exist?
-	  (set-cdr! sources (cons (car value-exp) (cdr sources)))  ;add this source to the register's sources
+	  (set-cdr! sources (cons car value-exp (cdr sources)))  ;add this source to the register's sources
 	  (set-cdr! register-sources                               ;add this register and its source to machine
-		    (cons (list reg-name (car value-exp))          ;(car value-exp) to remove extra ()
+		    (cons (list reg-name value-exp)          ;(car value-exp) to remove extra ()
 			  (cdr register-sources))))                ;since value-exp is doubly parenthesized for
       (lambda ()                                                   ;operation-exp?
         (set-contents! target (value-proc))
@@ -123,7 +113,7 @@
   (let ((dest (goto-dest inst))
 	(goto-entries (assoc '*goto* (machine 'instructions))))
     (if (not (memq inst goto-entries))
-	(set-cdr! goto-entries (const inst (cdr goto-entries)))) ;here!
+	(set-cdr! goto-entries (cons inst (cdr goto-entries)))) ;here!
     (cond ((label-exp? dest)
            (let ((insts (lookup-label labels (label-exp-label dest))))
              (lambda () (set-contents! pc insts))))
@@ -180,31 +170,31 @@
 (define fib-machine
   (make-machine
    '(continue n val)
-   (list (list '* *) (list '- -) (list '= =) (list '< <))
+   (list (list '< <) (list '- -) (list '+ +))
    '((assign continue (label fib-done))
      fib-loop
      (test (op <) (reg n) (const 2))
      (branch (label immediate-answer))
      (save continue)
      (assign continue (label afterfib-n-1))
-     (save n)
+     (save n)                          
      (assign n (op -) (reg n) (const 1))
-     (goto (label fib-loop))
-     afterfib-n-1
+     (goto (label fib-loop))           
+     afterfib-n-1                      
      (restore n)
      (restore continue)
      (assign n (op -) (reg n) (const 2))
      (save continue)
      (assign continue (label afterfib-n-2))
-     (save val)
+     (save val)                       
      (goto (label fib-loop))
-     afterfib-n-2 
-     (assign n (reg val))
-     (restore val)
+     afterfib-n-2                      
+     (assign n (reg val))    
+     (restore val)                
      (restore continue)
      (assign val (op +) (reg val) (reg n)) 
-     (goto (reg continue))        
+     (goto (reg continue)) 
      immediate-answer
-     (assign val (reg n)) 
+     (assign val (reg n))
      (goto (reg continue))
      fib-done)))
