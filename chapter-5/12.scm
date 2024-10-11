@@ -1,6 +1,8 @@
 ;;the information for the data paths should not require that the machine be run with start but should be
 ;;generated only once the machine is defined. that is, after the instructions have been assembled.
 
+;;we could have, and should have, used tables or sets
+
 ;; '((*assign*) (*test*) (*branch*) ...) is not the same as using lists as shown below
 ;;not specified in sicp that using quote makes the local state be shared between all instances of make-new-machine
 ;;using (list (list '*assign*) ...) prevents shared state, and objects function how we want as per chapter 3
@@ -9,16 +11,14 @@
         (flag (make-register 'flag))
         (stack (make-stack))
         (the-instruction-sequence '())
+	;;assoc for the type then memq for insts
 	(instructions (list (list '*assign*) (list '*test*) (list '*branch*)
 			    (list '*goto*) (list '*save*) (list '*restore*) (list '*perform*)))
-	(goto-registers (list '*head*))
-	(stack-registers (list '(*save*) '(*restore*)))
-	(register-sources (list '*head*)))
-    (let ((the-ops
-           (list (list 'initialize-stack
-                       (lambda () (stack 'initialize)))))
-          (register-table
-           (list (list 'pc pc) (list 'flag flag))))
+	(goto-registers (list '*head*))                    ;memq for registers
+	(stack-registers (list '(*save*) '(*restore*)))    ;assoc for save or restore then memq for registers
+	(register-sources (list '*head*)))                 ;assoc the cdr for register then memq for registers
+    (let ((the-ops (list (list 'initialize-stack (lambda () (stack 'initialize)))))
+          (register-table (list (list 'pc pc) (list 'flag flag))))
       (define (allocate-register name)
         (if (assoc name register-table)
             (error "Multiply defined register: " name)
@@ -71,13 +71,14 @@
                (make-primitive-exp
                 (car value-exp) machine labels)))
 	  (target (get-register machine reg-name))
-	  (sources (lookup reg-name register-sources)))
-      (if sources                                                  ;sources for this register exist?
-	  (set-cdr! sources (cons car value-exp (cdr sources)))  ;add this source to the register's sources
-	  (set-cdr! register-sources                               ;add this register and its source to machine
-		    (cons (list reg-name value-exp)          ;(car value-exp) to remove extra ()
-			  (cdr register-sources))))                ;since value-exp is doubly parenthesized for
-      (lambda ()                                                   ;operation-exp?
+	  (sources (assoc reg-name (cdr register-sources))))
+      (if sources
+	  (if (not (memq value-exp sources))
+	      (set-cdr! sources (cons value-exp (cdr sources))))
+	  (set-cdr! register-sources
+		    (cons (list reg-name value-exp)
+			  (cdr register-sources))))
+      (lambda ()
         (set-contents! target (value-proc))
         (advance-pc pc)))))
 
@@ -118,10 +119,10 @@
            (let ((insts (lookup-label labels (label-exp-label dest))))
              (lambda () (set-contents! pc insts))))
           ((register-exp? dest)
-           (let ((reg-name (register-exp-reg dest))
-		 (goto-registers (machine 'goto-registers)))
-	     (let ((reg (get-register machine reg-name)))
-	       (if (not (lookup reg-name goto-registers))
+           (let ((reg-name (register-exp-reg dest)))
+	     (let ((reg (get-register machine reg-name))
+		   (goto-registers (machine 'goto-registers)))
+	       (if (not (memq reg-name goto-registers))
 		   (set-cdr! goto-registers (cons reg-name (cdr goto-registers))))
                (lambda ()
 		 (set-contents! pc (get-contents reg))))))
