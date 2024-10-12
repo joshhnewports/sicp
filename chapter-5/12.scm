@@ -1,7 +1,7 @@
 ;;the information for the data paths should not require that the machine be run with start but should be
 ;;generated only once the machine is defined. that is, after the instructions have been assembled.
 
-;;we could have, and should have, used tables or sets
+;;we could have, and should have, used tables or sets. or a table of sets. and let* would have been smart.
 
 ;; '((*assign*) (*test*) (*branch*) ...) is not the same as using lists as shown below
 ;;not specified in sicp that using quote makes the local state be shared between all instances of make-new-machine
@@ -11,12 +11,11 @@
         (flag (make-register 'flag))
         (stack (make-stack))
         (the-instruction-sequence '())
-	;;assoc for the type then memq for insts
 	(instructions (list (list '*assign*) (list '*test*) (list '*branch*)
 			    (list '*goto*) (list '*save*) (list '*restore*) (list '*perform*)))
-	(goto-registers (list '*head*))                    ;memq for registers
-	(stack-registers (list '(*save*) '(*restore*)))    ;assoc for save or restore then memq for registers
-	(register-sources (list '*head*)))                 ;assoc the cdr for register then memq for registers
+	(goto-registers (list '*head*))
+	(stack-registers (list '(*save*) '(*restore*)))
+	(register-sources (list '*head*)))
     (let ((the-ops (list (list 'initialize-stack (lambda () (stack 'initialize)))))
           (register-table (list (list 'pc pc) (list 'flag flag))))
       (define (allocate-register name)
@@ -57,13 +56,21 @@
               (else (error "Unknown request -- MACHINE" message))))
       dispatch)))
 
+
+;;i have forgotten that '(a) is not a symbol but is a pair, so we replace all memqs with exists
+;;memq but uses equal? instead of eq?
+(define (exists obj ls)
+  (cond ((null? ls) false)
+	((equal? obj (car ls)) ls)
+	(else (exists? obj (cdr ls)))))
+
 (define (make-assign inst machine labels operations pc)
   (let ((reg-name (assign-reg-name inst))
         (value-exp (assign-value-exp inst))
 	(assign-entries (assoc '*assign* (machine 'instructions)))
 	(register-sources (machine 'register-sources)))
-    (if (not (memq inst assign-entries))
-	(set-cdr! assign-entries (cons inst (cdr assign-entries)))) ;add inst to instructions
+    (if (not (exists inst assign-entries))
+	(set-cdr! assign-entries (cons inst (cdr assign-entries))))
     (let ((value-proc
            (if (operation-exp? value-exp)
                (make-operation-exp
@@ -73,7 +80,7 @@
 	  (target (get-register machine reg-name))
 	  (sources (assoc reg-name (cdr register-sources))))
       (if sources
-	  (if (not (memq value-exp sources))
+	  (if (not (exists value-exp sources))
 	      (set-cdr! sources (cons value-exp (cdr sources))))
 	  (set-cdr! register-sources
 		    (cons (list reg-name value-exp)
@@ -89,8 +96,8 @@
 	      (condition-proc
 	       (make-operation-exp
                 condition machine labels operations)))
-	  (if (not (memq inst test-entries))
-	      (set-cdr! test-entries (cons inst (cdr test-entries)))) ;here!
+	  (if (not (exists inst test-entries))
+	      (set-cdr! test-entries (cons inst (cdr test-entries))))
 	  (lambda ()
 	    (set-contents! flag (condition-proc))
 	    (advance-pc pc)))
@@ -102,8 +109,8 @@
         (let ((insts
                (lookup-label labels (label-exp-label dest)))
 	      (branch-entries (assoc '*branch* (machine 'instructions))))
-	  (if (not (memq inst branch-entries))
-	      (set-cdr! branch-entries (cons inst (cdr branch-entries)))) ;here!
+	  (if (not (exists inst branch-entries))
+	      (set-cdr! branch-entries (cons inst (cdr branch-entries))))
           (lambda ()
             (if (get-contents flag)
                 (set-contents! pc insts)
@@ -113,8 +120,8 @@
 (define (make-goto inst machine labels pc)
   (let ((dest (goto-dest inst))
 	(goto-entries (assoc '*goto* (machine 'instructions))))
-    (if (not (memq inst goto-entries))
-	(set-cdr! goto-entries (cons inst (cdr goto-entries)))) ;here!
+    (if (not (exists inst goto-entries))
+	(set-cdr! goto-entries (cons inst (cdr goto-entries))))
     (cond ((label-exp? dest)
            (let ((insts (lookup-label labels (label-exp-label dest))))
              (lambda () (set-contents! pc insts))))
@@ -122,7 +129,7 @@
            (let ((reg-name (register-exp-reg dest)))
 	     (let ((reg (get-register machine reg-name))
 		   (goto-registers (machine 'goto-registers)))
-	       (if (not (memq reg-name goto-registers))
+	       (if (not (exists reg-name goto-registers))
 		   (set-cdr! goto-registers (cons reg-name (cdr goto-registers))))
                (lambda ()
 		 (set-contents! pc (get-contents reg))))))
@@ -133,9 +140,9 @@
 	(save-entries (assoc '*save* (machine 'instructions)))
 	(save-registers (assoc '*save* (machine 'stack-registers))))
     (let ((reg (get-register machine reg-name)))
-      (if (not (memq inst save-entries))
-	  (set-cdr! save-entries (cons inst (cdr save-entries)))) ;here!
-      (if (not (memq reg-name save-registers))
+      (if (not (exists inst save-entries))
+	  (set-cdr! save-entries (cons inst (cdr save-entries))))
+      (if (not (exists reg-name save-registers))
 	  (set-cdr! save-registers (cons reg-name (cdr save-registers))))
       (lambda ()
 	(push stack (get-contents reg))
@@ -146,9 +153,9 @@
 	(restore-entries (assoc '*restore* (machine 'instructions)))
 	(restore-registers (assoc '*restore* (machine 'stack-registers))))
     (let ((reg (get-register machine reg-name)))
-      (if (not (memq inst restore-entries))
-	  (set-cdr! restore-entries (cons inst (cdr restore-entries)))) ;here!
-      (if (not (memq reg-name restore-registers))
+      (if (not (exists inst restore-entries))
+	  (set-cdr! restore-entries (cons inst (cdr restore-entries))))
+      (if (not (exists reg-name restore-registers))
 	  (set-cdr! restore-registers (cons reg-name (cdr restore-registers))))
       (lambda ()
 	(set-contents! reg (pop stack))
@@ -161,7 +168,7 @@
                (make-operation-exp
                 action machine labels operations))
 	      (perform-entries (assoc '*perform* (machine 'instructions))))
-	  (if (not (memq inst perform-entries))
+	  (if (not (exists inst perform-entries))
 	      (set-cdr! perform-entries (cons inst (cdr perform-entries))))
           (lambda ()
             (action-proc)
@@ -199,3 +206,27 @@
      (assign val (reg n))
      (goto (reg continue))
      fib-done)))
+
+;;instructions
+;;(*assign* (assign val (reg n)) (assign val (op +) (reg val) (reg n)) (assign n (reg val)) (assign continue (label afterfib-n-2)) (assign n (op -) (reg n) (const 2)) (assign n (op -) (reg n) (const 1)) (assign continue (label afterfib-n-1)) (assign continue (label fib-done)))
+
+;;(*test* (test (op <) (reg n) (const 2)))
+
+;;(*branch* (branch (label immediate-answer)))
+
+;;(*goto* (goto (reg continue)) (goto (label fib-loop)))
+
+;;(*save* (save val) (save n) (save continue))
+
+;;(*restore* (restore val) (restore continue) (restore n))
+
+;;(*perform*)
+
+;;goto-registers
+;;(*head* continue)
+
+;;stack-registers. obviously doesn't need the sublists but should be a list of the register names
+;;((*save* val n continue) (*restore* val continue n))
+
+;;register-sources. non-composed expressions are doubly parenthesized
+;;(*head* (val ((reg n)) ((op +) (reg val) (reg n))) (n ((reg val)) ((op -) (reg n) (const 2)) ((op -) (reg n) (const 1))) (continue ((label afterfib-n-2)) ((label afterfib-n-1)) ((label fib-done))))
