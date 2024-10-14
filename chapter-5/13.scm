@@ -58,8 +58,22 @@
   (for-each
    (lambda (input)
      (if (register-exp? input)
-	 (if ((machine 'get-register) input)
-	 
+	 (if (not (get-register machine (register-exp-reg input)))
+	     (begin (newline)
+		    (display "allocating ")
+		    (display (register-exp-reg input))
+		    ((machine 'allocate-register) (register-exp-reg input)))
+	     (begin (newline)
+		    (display "already allocated ")
+		    (display (register-exp-reg input))))))
+   inputs))
+
+(define (set-and-get-reg machine reg-name)
+  ((machine 'allocate-register) reg-name)
+  (newline)
+  (display "set-and-get-reg ")
+  (display reg-name)
+  (get-register machine reg-name))
 
 (define (make-assign inst machine labels operations pc)
   (let ((reg (get-register machine (assign-reg-name inst)))
@@ -67,9 +81,7 @@
     (let ((target
 	   (if reg
 	       reg
-	       (begin ((machine 'allocate-register)
-		       (assign-reg-name inst))
-		      (get-register machine (assign-reg-name inst)))))
+	       (set-and-get-reg machine (assign-reg-name inst))))
 	  (value-proc
            (if (operation-exp? value-exp)
 	       (begin (operation-exp-reg-allocation
@@ -89,8 +101,60 @@
         (let ((condition-proc
                (make-operation-exp
                 condition machine labels operations)))
+	  (operation-exp-reg-allocation
+	   machine
+	   (operation-exp-operands condition))
           (lambda ()
             (set-contents! flag (condition-proc))
             (advance-pc pc)))
         (error "Bad TEST instruction -- ASSEMBLE" inst))))
-(define (test-condition test-instruction)
+
+(define (make-save inst machine stack pc)
+  (let ((register (get-register machine (stack-inst-reg-name inst))))
+    (let ((reg
+	   (if register
+	       register
+	       (set-and-get-reg machine (stack-inst-reg-name inst)))))
+      (lambda ()
+	(push stack (get-contents reg))
+	(advance-pc pc)))))
+
+(define (make-restore inst machine stack pc)
+  (let ((register (get-register machine (stack-inst-reg-name inst))))
+    (let ((reg
+	   (if register
+	       register
+	       (set-and-get-reg machine (stack-inst-reg-name inst)))))
+      (lambda ()
+	(set-contents! reg (pop stack))    
+	(advance-pc pc)))))
+
+(define (make-perform inst machine labels operations pc)
+  (let ((action (perform-action inst)))
+    (if (operation-exp? action)
+        (let ((action-proc
+               (make-operation-exp
+                action machine labels operations)))
+	  (operation-exp-reg-allocation
+	   machine
+	   (operation-exp-operands (operation-exp-operands action)))
+          (lambda ()
+            (action-proc)
+            (advance-pc pc)))
+        (error "Bad PERFORM instruction -- ASSEMBLE" inst))))
+
+(define gcd-machine
+  (make-machine
+   (list (list 'rem remainder) (list '= =))
+   '(test-b
+       (test (op =) (reg b) (const 0))
+       (branch (label gcd-done))
+       (assign t (op rem) (reg a) (reg b))
+       (assign a (reg b))
+       (assign b (reg t))
+       (goto (label test-b))
+       gcd-done)))
+
+(set-register-contents! gcd-machine 'a 206)
+(set-register-contents! gcd-machine 'b 40)
+(start gcd-machine)
