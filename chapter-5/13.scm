@@ -4,6 +4,9 @@
 ;;the save of a register, and the restore of a register.
 ;;goto not necessary as that register must have been assigned to some label
 
+;;i worked on this exercise during nights and saw a solution that was only a small change
+;;to lookup-register. i overthought this completely.
+
 (define (make-machine ops controller-text)
   (let ((machine (make-new-machine)))
     ((machine 'install-operations) ops)    
@@ -58,22 +61,20 @@
   (for-each
    (lambda (input)
      (if (register-exp? input)
-	 (if (not (get-register machine (register-exp-reg input)))
-	     (begin (newline)
-		    (display "allocating ")
-		    (display (register-exp-reg input))
-		    ((machine 'allocate-register) (register-exp-reg input)))
-	     (begin (newline)
-		    (display "already allocated ")
-		    (display (register-exp-reg input))))))
+	 ((machine 'allocate-register) (register-exp-reg input))))
    inputs))
 
 (define (set-and-get-reg machine reg-name)
   ((machine 'allocate-register) reg-name)
-  (newline)
-  (display "set-and-get-reg ")
-  (display reg-name)
   (get-register machine reg-name))
+
+;;horrific side effects can happen. its important to allocate registers before calling
+;;make-operation-exp or make-primitive-exp. this goes for the other procedures as well.
+;;we could have changed make-operation-exp and make-primitive-exp and dealt with distinct cases
+;;like the allocation of the target register in make-assign and the allocation of the registers in
+;;make-save and make-restore, but it seems not great, personally, to mix an extension of the simulator in two
+;;different levels of the system, those procedures in the case analysis of make-execution-procedure,
+;;and those procedures at the lower-level being make-operation-exp and make-primitive-exp.
 
 (define (make-assign inst machine labels operations pc)
   (let ((reg (get-register machine (assign-reg-name inst)))
@@ -83,14 +84,13 @@
 	       reg
 	       (set-and-get-reg machine (assign-reg-name inst))))
 	  (value-proc
-           (if (operation-exp? value-exp)
-	       (begin (operation-exp-reg-allocation
-		       machine
-		       (operation-exp-operands value-exp)) ;the list of inputs
-		      (make-operation-exp
-                       value-exp machine labels operations))
-               (make-primitive-exp
-                (car value-exp) machine labels))))
+	   (cond ((operation-exp? value-exp)
+		  (operation-exp-reg-allocation machine (operation-exp-operands value-exp))
+		  (make-operation-exp value-exp machine labels operations))
+		 ((register-exp? value-exp)
+		  ((machine 'allocate-register) (register-exp-reg value-exp))
+		  (make-primitive-exp (car value-exp) machine labels))
+		 (else (make-primitive-exp (car value-exp) machine labels)))))  ;in the case of a const exp
       (lambda ()
         (set-contents! target (value-proc))
         (advance-pc pc)))))
@@ -98,15 +98,16 @@
 (define (make-test inst machine labels operations flag pc)
   (let ((condition (test-condition inst)))
     (if (operation-exp? condition)
-        (let ((condition-proc
-               (make-operation-exp
-                condition machine labels operations)))
-	  (operation-exp-reg-allocation
+	(begin
+	  (operation-exp-reg-allocation                 ;allocate before evaluating condition-proc
 	   machine
 	   (operation-exp-operands condition))
-          (lambda ()
-            (set-contents! flag (condition-proc))
-            (advance-pc pc)))
+          (let ((condition-proc
+		 (make-operation-exp
+                  condition machine labels operations)))
+	    (lambda ()
+	      (set-contents! flag (condition-proc))
+	      (advance-pc pc))))
         (error "Bad TEST instruction -- ASSEMBLE" inst))))
 
 (define (make-save inst machine stack pc)
@@ -132,17 +133,19 @@
 (define (make-perform inst machine labels operations pc)
   (let ((action (perform-action inst)))
     (if (operation-exp? action)
-        (let ((action-proc
-               (make-operation-exp
-                action machine labels operations)))
+	(begin
 	  (operation-exp-reg-allocation
 	   machine
 	   (operation-exp-operands (operation-exp-operands action)))
-          (lambda ()
-            (action-proc)
-            (advance-pc pc)))
+          (let ((action-proc
+		 (make-operation-exp
+                  action machine labels operations)))
+            (lambda ()
+              (action-proc)
+              (advance-pc pc))))
         (error "Bad PERFORM instruction -- ASSEMBLE" inst))))
 
+;;usage
 (define gcd-machine
   (make-machine
    (list (list 'rem remainder) (list '= =))
@@ -154,7 +157,3 @@
        (assign b (reg t))
        (goto (label test-b))
        gcd-done)))
-
-(set-register-contents! gcd-machine 'a 206)
-(set-register-contents! gcd-machine 'b 40)
-(start gcd-machine)
