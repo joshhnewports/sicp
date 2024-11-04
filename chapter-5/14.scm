@@ -2,7 +2,8 @@
   (make-machine
    '(n continue val)
    (list (list '= =) (list '- -) (list '* *))
-   '((assign continue (label fact-done))
+   '((perform (op initialize-stack))
+     (assign continue (label fact-done))
      fact-loop
      (test (op =) (reg n) (const 1))
      (branch (label base-case))
@@ -22,9 +23,7 @@
      fact-done
      (perform (op print-stack-statistics)))))
 
-(set-register-contents! factorial-machine 'n 6)
-(start factorial-machine)
-(get-register-contents factorial-machine 'val)
+;;2 4 6 8 10 12
+;;2 3 4 5  6  7
 
-;;2 6 12 20 30
-;;2 3 4  5  6
+;;The formula for the number of total pushes and the max depth is 2(n - 1).
