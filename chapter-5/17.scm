@@ -1,3 +1,6 @@
+;;an instruction is a list of the text, the execution-proc, and if there exists one, the label preceding it
+;;if an instruction has a label preceding it, then trace will display it
+
 (define (make-new-machine)
   (let ((pc (make-register 'pc))
         (flag (make-register 'flag))
@@ -58,20 +61,14 @@
       dispatch)))
 
 (define (update-insts! insts labels machine)
-  (newline)
-  (display labels)
   (let ((pc (get-register machine 'pc))
         (flag (get-register machine 'flag))
         (stack (machine 'stack))
         (ops (machine 'operations))
-	(first-inst-labels (partition-labels labels)))
-    ;(newline)
-    ;(display "FIRST-INST-LABELS")
-    ;(newline)
-    ;(display first-inst-labels)
+	(first-inst-labels (partition-labels labels))) ;get list of labels with their immediate instruction
     (for-each
      (lambda (inst)
-       (set-instruction-label! inst (lookup (instruction-text inst) first-inst-labels))
+       (set-instruction-label! inst (lookup (instruction-text inst) first-inst-labels)) ;set inst label if it exists
        (set-instruction-execution-proc! 
         inst
         (make-execution-procedure
@@ -87,8 +84,9 @@
 ;;makes a list of conses with the first instruction after a label and the label
 (define (partition-labels labels)
   (cond ((null? labels) '())
+	((null? (cdr labels)) '())
 	((symbol? (caar labels))
-	 (cons (cons (cadar labels) (caar labels))
+	 (cons (cons (caadar labels) (caar labels)) ;grim
 	       (partition-labels (cdr labels))))
 	(else (partition-labels (cdr labels)))))
 
@@ -103,12 +101,3 @@
   (cadr inst))
 (define (set-instruction-execution-proc! inst proc)
   (set-car! (cdr inst) proc))
-
-
-(set-register-contents! factorial-machine 'n 2)
-(start factorial-machine)
-(get-register-contents factorial-machine 'val)
-
-(factorial-machine 'trace-on)
-
-'((base-case ((assign val (const 1)) () ()) ((goto (reg continue)) () ())) (fact-done))
