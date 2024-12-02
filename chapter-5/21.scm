@@ -1,21 +1,5 @@
 ;;trying to solve fibonacci first
 
-(perform (op initialize-stack))
-
-count-leaves
-(test (op null?) (reg tree))
-(branch (label base-case-0))
-(test (op pair?) (reg tree))
-(branch (label recursive-case))            ;pair?
-(assign sum (op +) (reg sum) (const 1))    ;not a pair
-(test (op null?) (reg the-stack))
-(goto (label done))
-(restore tree)
-(assign tree (op car) tree)
-(goto (label count-leaves))
-
-base-case-0
-
 ;;;;;;;;;;
 
 (define fib-machine
@@ -29,23 +13,22 @@ base-case-0
      (test (op <) (reg n) (const 2))
      (branch (label base-case))
      (save continue)
-     (assign continue (label fib-1))
+     (assign continue (label afterfib-1))
      (save n)
      (assign n (op -) (reg n) (const 1))
      (goto (label fib-loop))
 
-     fib-1
-     (restore n)
-     (restore continue)
-     (assign continue (label fib-2))
+     afterfib-1 ;after computing fib(n - 1)
+     (restore n) ;get n for fib(n - 2)
+     ;;prepare for fib(n - 2)
      (assign n (op -) (reg n) (const 2))
-     (goto (label fib-loop))
+     (assign continue (label afterfib-2)) ;what to do after fib(n - 2)
+     (goto (label fib-loop)) ;compute fib(n - 2)
 
-     fib-2
+     afterfib-2
      (restore n)
-     (assign n (op -) (reg n) (const 2))
      (restore continue)
-     (goto (label fib-loop))
+     (goto (reg continue))
 
      base-case
      (assign val (op +) (reg val) (reg n))
