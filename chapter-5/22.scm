@@ -1,11 +1,30 @@
-(define (append x y)
-  (if (null? x)
-      y
-      (cons (car x) (append (cdr x) y))))
-
-(define (append! x y)
-  (set-cdr! (last-pair x) y)
-  x)
+;;cdr down x until its null, saving x each time. when x is null, repeatedly cons y with the car of the saved x
+(define append-machine
+  (make-machine
+   '(x continue y)
+   (list (list 'car car) (list 'cdr cdr) (list 'cons cons) (list 'null? null?))
+   '((assign continue (label append-done))
+     
+     append-loop
+     (test (op null?) (reg x))
+     (branch (label null-case))
+     (save continue)
+     (save x) ;to take the car of
+     (assign continue (label after-cdr))
+     (assign x (op cdr) (reg x))
+     (goto (label append-loop))
+     
+     after-cdr
+     (restore x)
+     (restore continue)
+     (assign x (op car) (reg x))
+     (assign y (op cons) (reg x) (reg y))
+     (goto (reg continue))
+     
+     null-case
+     (goto (reg continue))
+     
+     append-done))) ;val is in y
 
 (define append!
   (make-machine
