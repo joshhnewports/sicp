@@ -45,21 +45,37 @@ ev-let-after-vals ;assume the operation make-lambda: (cons 'lambda (cons <argl> 
 ;;syntactically transform to nested if expression set in the exp register, then goto eval-dispatch.
 
 ev-cond->if
-(test (op null?) (reg exp))
-(branch (label ))
 (save continue)
+(assign continue (label ev-after-cond->if))
+
+ev-cond-loop
+(test (op null?) (reg exp))
+(branch (label ev-cond-null-case)) ;no else clause
 (assign unev (op first-clause) (reg exp))
+(test (op else-clause?) (reg unev))
+(branch (label ev-cond-else-case))
 (save unev)
 (assign exp (op rest-clauses) (reg exp))
+(save continue)
+(assign continue (label ev-cond-after-expand))
+(goto (label ev-cond-loop))
 
-(goto (ev-cond->if))
+ev-cond-after-expand
+(restore continue)
+(restore unev) ;clause
+(assign argl (op cond-predicate) (reg unev)) ;use argl for space. not needed if we cons manually
+(assign unev (op cond-actions) (reg unev))
+(assign exp (op make-if) (reg argl) (reg unev) (reg exp))
+(goto (reg continue))
 
-(cond (p e)
-      (p e)
-      (else e))
+ev-cond-null-case
+(assign exp (const false))
+(goto (reg continue))
 
-(if p
-    e
-    (if p
-	e
-	e))
+ev-cond-else-case
+(assign exp (op cond-actions) (reg unev))
+(goto (reg continue))
+
+ev-after-cond->if
+(restore continue)
+(goto (label eval-dispatch))
