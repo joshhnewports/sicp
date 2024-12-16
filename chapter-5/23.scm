@@ -79,3 +79,34 @@ ev-cond-else-case
 ev-after-cond->if
 (restore continue)
 (goto (label eval-dispatch))
+
+;;and
+;;similar to cond
+
+ev-and->if
+
+ev-and-loop
+(test (op no-predicates?) (reg exp))
+(branch (label ev-and-null-case))
+(test (op last-predicate?) (reg exp))
+(branch (label ev-and-last-case))
+(assign unev (op first-predicate) (reg exp))
+(save unev)
+(assign exp (op rest-predicates) (reg exp))
+(save continue)
+(assign continue (label ev-and-after-expand))
+(goto (label ev-and-loop))
+
+ev-and-after-expand
+(restore continue)
+(restore unev)
+(assign exp (op make-if) (reg unev) (reg exp) (const false))
+(goto (reg continue))
+
+ev-and-null-case
+(assign exp (const true))
+(goto (reg continue))
+
+ev-and-last-case
+(assign exp (op first-predicate) (reg exp))
+(goto (reg continue))
