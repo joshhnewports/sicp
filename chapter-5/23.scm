@@ -83,8 +83,7 @@ ev-after-cond->if
 ;;and
 ;;similar to cond
 
-ev-and->if
-
+ev-and->if ;fallthrough
 ev-and-loop
 (test (op no-predicates?) (reg exp))
 (branch (label ev-and-null-case))
@@ -109,4 +108,19 @@ ev-and-null-case
 
 ev-and-last-case
 (assign exp (op first-predicate) (reg exp))
+(goto (reg continue))
+
+;;or
+ev-or->if;fallthrough
+ev-or-loop
+(test (op no-predicates?) (reg exp))
+(branch (label ev-or-null-case))
+(assign unev (op first-predicate) (reg exp))
+
+(assign exp (op make-if) (reg unev) (reg unev) (reg exp))
+(assign exp (op make-lambda) (reg unev) (reg exp))
+(assign exp (op cons) (reg exp) (reg argl))
+
+ev-or-null-case
+(assign exp (const false))
 (goto (reg continue))
