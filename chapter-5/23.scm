@@ -84,6 +84,9 @@ ev-after-cond->if
 ;;similar to cond
 
 ev-and->if ;fallthrough
+(save continue)
+(assign continue (label ev-after-and->if))
+
 ev-and-loop
 (test (op no-predicates?) (reg exp))
 (branch (label ev-and-null-case))
@@ -110,17 +113,37 @@ ev-and-last-case
 (assign exp (op first-predicate) (reg exp))
 (goto (reg continue))
 
+ev-after-and->if
+(restore continue)
+(goto (label eval-dispatch))
+
 ;;or
-ev-or->if;fallthrough
+ev-or->if ;fallthrough
+(save continue)
+(assign continue (label ev-after-or->if))
+
 ev-or-loop
 (test (op no-predicates?) (reg exp))
 (branch (label ev-or-null-case))
 (assign unev (op first-predicate) (reg exp))
+(save unev)
+(save continue)
+(assign continue (label ev-or-after-expand))
+(goto (label ev-or-loop))
 
+ev-or-after-expand
+(restore continue)
+(assign unev (const p)) ;p is the formal parameter for the lambda we will make, and is used in the if
 (assign exp (op make-if) (reg unev) (reg unev) (reg exp))
 (assign exp (op make-lambda) (reg unev) (reg exp))
-(assign exp (op cons) (reg exp) (reg argl))
+(restore unev) ;predicate
+(assign exp (op make-application) (reg exp) (reg unev)) ;proc is a lambda and arg is the pred
+(goto (reg continue))
 
 ev-or-null-case
 (assign exp (const false))
 (goto (reg continue))
+
+ev-after-or->if
+(restore continue)
+(goto (label eval-dispatch))
