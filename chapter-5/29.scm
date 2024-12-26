@@ -9,6 +9,4 @@ Max depth = 5n + 3.
 
 Let S(n) be the number of pushes in computing Fib(n). Then S(n) = S(n - 1) + S(n - 2) + 40.
 
-S(4) = a * 5 + b, a = 48
-S(5) = a * 8 + b = 408, a = 51
-S(6) = a * 13 + b = 688,
+I had to look up (b). I do not know how to do proofs. Next year!
